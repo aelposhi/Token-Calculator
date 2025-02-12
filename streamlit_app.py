@@ -128,21 +128,24 @@ if st.button("Recommend Best Plan"):
     st.subheader("Subscription Plan Details")
     st.write(f"**Recommended Plan:** {recommended_plan}")
     st.write(f"**Subscription Term:** {subscription_term}")
+    st.write(f"**Monthly Subscription Cost:** ${standard_monthly_subscription_cost:,.2f}")
     st.write(f"**Tokens Included Monthly:** {plan_details['Tokens Included']:,}")
-    st.write(f"**Overage Rate per Token:** ${plan_details['Overage Rate']:,.4f}")
     st.write(f"**Overage Tokens Monthly:** {overage_tokens:,}")
-    
-    st.write(f"**Standard Monthly Subscription Cost:** ${standard_monthly_subscription_cost:,.2f}")
-    st.write(f"**Monthly Subscription Cost (Including Overage):** ${monthly_total:,.2f}")
+    st.write(f"**Overage Rate per Token:** ${plan_details['Overage Rate']:,.4f}")
+
     
     st.subheader("Cost Calculation")
+    st.write(f"**Monthly Subscription Cost:** ${standard_monthly_subscription_cost:,.2f}")
     st.write(f"**Overage Monthly Cost:** ${overage_cost:,.2f}")
+    st.write(f"**Monthly Subscription Cost (Including Overage):** ${monthly_total:,.2f}")
     st.write(f"**Total Cost for {subscription_term}:** ${total_term_cost:,.2f}")
+    st.write(f"**Final Cost After Discounts:** ${total_cost_after_discount:,.2f}")
+    
+    st.subheader("Discount Breakdown")
     st.write(f"**Term Discount:** {term_discount}%")
     st.write(f"**Upfront Payment Discount:** {upfront_discount}%")
     st.write(f"**Total Discount Applied:** {total_discount}%")
-    st.write(f"**Final Cost After Discounts:** ${total_cost_after_discount:,.2f}")
-    
+
     if subscription_term in ["Two-Year", "Three-Year"]:
         st.subheader("Annual Breakdown")
         for year in range(1, term_length + 1):
