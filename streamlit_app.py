@@ -29,15 +29,14 @@ plans = {
 def calculate_discount(subscription_term, payment_option):
     term_discount = 1.0  # No discount by default
     if subscription_term == 2:
-        term_discount = 0.90  # 10% savings for two-year term
+        term_discount *= 0.90  # 10% savings for two-year term
     elif subscription_term == 3:
-        term_discount = 0.80  # 20% savings for three-year term
+        term_discount *= 0.80  # 20% savings for three-year term
     
-    upfront_discount = 1.0  # No discount by default
     if payment_option == "Upfront Payment":
-        upfront_discount = 0.90  # Additional 10% discount for upfront payment
+        term_discount *= 0.90  # Additional 10% discount for upfront payment
     
-    return term_discount * upfront_discount
+    return term_discount
 
 
 def calculate_needed_tokens(user_inputs):
@@ -71,7 +70,7 @@ if st.button("Recommend Best Plan"):
     monthly_total = plan_details["Price"] + overage_cost
     annual_total_monthly = monthly_total * 12
     
-    # Apply correct discount calculation
+    # Apply correct cumulative discount calculation
     total_discount = calculate_discount(subscription_term, payment_option)
     annual_total_upfront = annual_total_monthly * total_discount
     
@@ -86,4 +85,4 @@ if st.button("Recommend Best Plan"):
     st.write(f"**Annual Cost (Monthly Billing):** ${annual_total_monthly:.2f}")
     if payment_option == "Upfront Payment":
         discount_percentage = 100 - (total_discount * 100)
-        st.write(f"**Annual Cost (Upfront Payment - {discount_percentage:.0f}% Discount for {subscription_term} Year(s)):** ${annual_total_upfront:.2f}")
+        st.write(f"**Annual Cost (Upfront Payment - {discount_percentage:.0f}% Cumulative Discount for {subscription_term} Year(s)):** ${annual_total_upfront:.2f}")
