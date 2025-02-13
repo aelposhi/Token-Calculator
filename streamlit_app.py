@@ -5,7 +5,7 @@ import pandas as pd
 services = {
     "Personal Photos": 7,  # Cost per photo
     "Contracts": 7,  # Cost per page
-    "Stamp, Signature, and QR": 5,  # Cost per page
+    "Stamp, Signature, and QR": 5,  # Cost per verification
     "Passports": 7,  # Cost per page
     "ID": 5,  # Cost per photo
     "Invoices": 7,  # Cost per page
@@ -42,10 +42,11 @@ def calculate_discount(subscription_term, payment_option):
     return total_discount, term_discount, upfront_discount
 
 
-def calculate_needed_tokens(user_inputs):
-    return sum(services[service] * user_inputs[service] for service in user_inputs if service in services)
+def calculate_needed_tokens(user_inputs, input_type):
+    factor = 1 if input_type == "Monthly" else 12  # Convert annual inputs to monthly
+    return int(-(-sum(services[service] * (user_inputs[service] / factor) for service in user_inputs if service in services) // 1))  # Round up to nearest integer
 
-def recommend_best_plan(total_tokens):
+def recommend_best_plan(total_tokens, strategy):
     best_plan = None
     best_cost = float("inf")
     selected_plan = None
@@ -56,6 +57,10 @@ def recommend_best_plan(total_tokens):
         base_price = details["Price"]
         overage_rate = details["Overage Rate"]
         
+        if strategy == "Nearest Plan":
+            if total_tokens <= tokens_included:
+                return plan, details  # Select the smallest plan that fully covers the tokens
+        
         if total_tokens <= tokens_included:
             cost = base_price  # No overage cost
         else:
@@ -63,8 +68,7 @@ def recommend_best_plan(total_tokens):
             overage_cost = overage_tokens * overage_rate
             cost = base_price + overage_cost
         
-        # Check if upgrading to the next plan is cheaper
-        if i < len(plan_names) - 1:
+        if strategy == "Cost Optimization" and i < len(plan_names) - 1:
             next_plan = plan_names[i + 1]
             next_plan_cost = plans[next_plan]["Price"]
             if next_plan_cost < cost:
@@ -78,18 +82,20 @@ def recommend_best_plan(total_tokens):
 
 st.title("Khwarizm Token Calculator")
 
-# User inputs for service usage
-st.subheader("Enter the monthly number of pages or photos required:")
+# User input for monthly or annual service usage
+st.subheader("Enter the number of pages and photos needed for each service:")
+input_type = st.radio(
+    "How would you like to enter your service usage?",
+    ["Monthly", "Annually"],
+    help="Select whether to enter the number of services processed per month or per year."
+)
+
+# User inputs for service usage with detailed hints
 user_inputs = {
-    "Personal Photos": st.number_input("Personal Photos", min_value=0, step=1, help="Number of personal photos to be processed per month."),
-    "Contracts": st.number_input("Contracts", min_value=0, step=1, help="Number of contract pages to be processed per month."),
-    "Stamp, Signature, and QR": st.number_input("Stamp, Signature, and QR", min_value=0, step=1, help="Number of pages containing stamp, signature, or QR to be processed per month."),
-    "Passports": st.number_input("Passports", min_value=0, step=1, help="Number of passport pages to be processed per month."),
-    "ID": st.number_input("ID", min_value=0, step=1, help="Number of ID photos to be processed per month. Note: Id front and back are counted as two photos"),
-    "Invoices": st.number_input("Invoices", min_value=0, step=1, help="Number of invoice pages to be processed per month."),
-    "Entry Permit File": st.number_input("Entry Permit File", min_value=0, step=1, help="Number of entry permit file pages to be processed per month."),
-    "Residency File": st.number_input("Residency File", min_value=0, step=1, help="Number of residency file pages to be processed per month."),
-    "Immigration File": st.number_input("Immigration File", min_value=0, step=1, help="Number of immigration file pages to be processed per month.")
+    service: st.number_input(
+        f"{service} ({input_type})", min_value=0, step=1, format="%d",
+        help=f"Enter the expected number of {service} to be processed {input_type.capitalize()}.")
+    for service in services.keys()
 }
 
 # User input for payment preference
@@ -106,10 +112,17 @@ subscription_term = st.selectbox(
     help="Select the duration of your subscription. Longer terms provide additional discounts."
 )
 
+# User input for subscription strategy
+strategy = st.radio(
+    "Select Subscription Recommendation Strategy:",
+    ["Nearest Plan", "Cost Optimization"],
+    help="Choose whether to select the nearest plan that fully covers the tokens or optimize for the lowest total cost."
+)
+
 # Calculate required tokens
 if st.button("Recommend Best Plan"):
-    total_tokens = calculate_needed_tokens(user_inputs)
-    recommended_plan, plan_details = recommend_best_plan(total_tokens)
+    total_tokens = calculate_needed_tokens(user_inputs, input_type)
+    recommended_plan, plan_details = recommend_best_plan(total_tokens, strategy)
     
     overage_tokens = max(0, total_tokens - plan_details["Tokens Included"])
     overage_cost = overage_tokens * plan_details["Overage Rate"]
